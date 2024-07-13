@@ -1,40 +1,56 @@
 'use client';
 
+import { useEffect, useState } from "react";
 import MediaRow from "./media-row";
 import { Media } from "@/types";
-import { useEffect, useState } from "react";
+import getMedias from "@/actions/get-medias";
+import { ErrorModal } from "./modals/error-modal";
 
-interface MediaGridProps {
-  medias: Media[]
-}
+const MediaGrid = () => {
+  const [medias, setMediasData] = useState<Media[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [openErrorModal, setOpenErrorModal] = useState(false);
 
-const MediaGrid: React.FC<MediaGridProps> = ({
-  medias
-}) => {
-  const [isMounted, setIsMounted] = useState(false);
+  const fetchData = async () => {
+    try {
+      const response = await getMedias();
+      setMediasData(response);
+    } catch (error) {
+      setOpenErrorModal(true);
+      console.log('[MediaGrid] - fetchData - error while fetching medias data', error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    setIsMounted(true);
+    fetchData();
   }, []);
-
-  if (!isMounted) return null;
 
   const chunkArray = (array: Media[], size: number) => {
     const chunkedArr = [];
-    for (let i = 0; i < array.length; i += size) {
+    for (let i = 0; i < array?.length; i += size) {
       chunkedArr.push(array.slice(i, i + size));
     }
     return chunkedArr;
   }
 
-  const mediaChunks = chunkArray(medias, 20);
-
   return (
-    <div className="flex flex-col gap-2">
-      {mediaChunks.map((chunk, index) => (
-        <MediaRow key={index} medias={chunk} />
-      ))}
-    </div>
+    <>
+      <ErrorModal 
+        isOpen={openErrorModal}
+        onClose={() => window.location.reload()}
+        loading={loading}
+      />
+    
+      <div className="flex flex-col gap-2">
+        {!loading ? (chunkArray(medias, 20).map((chunk, index) => (
+          <MediaRow key={index} medias={chunk} loading={loading} />
+        ))) : (
+          <MediaRow medias={[]} loading={loading} />
+        )}
+      </div>
+    </>
   )
 }
 
