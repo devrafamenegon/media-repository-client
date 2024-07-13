@@ -22,7 +22,7 @@ export function SearchBar() {
   return (
     <div className="flex w-full max-w-sm items-center space-x-2">
       <Input type="text" placeholder="Search" value={inputValue} onChange={onChange} onKeyDown={(e) => { if (e.key === "Enter") onClick() }}
- className="focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"/>
+ className="hidden sm:flex focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0"/>
       <Button onClick={onClick} variant="ghost" className="flex items-center rounded-full px-4 py-2">
         <Search size={26} className="hover:scale-110"/>
       </Button>
