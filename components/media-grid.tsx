@@ -44,7 +44,7 @@ const MediaGrid = () => {
       />
     
       <div className="flex flex-col gap-2">
-        {!loading ? (chunkArray(medias, 20).map((chunk, index) => (
+        {!loading ? (chunkArray(medias, 21).map((chunk, index) => (
           <MediaRow key={index} medias={chunk} loading={loading} />
         ))) : (
           <MediaRow medias={[]} loading={loading} />
