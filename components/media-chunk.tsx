@@ -1,44 +1,40 @@
-import { CldVideoPlayer } from "next-cloudinary";
-import 'next-cloudinary/dist/cld-video-player.css';
+
 
 import { Media } from "@/types";
 import { Skeleton } from "./ui/skeleton";
+import Image from "next/image";
+import useMediaModal from "@/hooks/use-media-modal";
 
 interface MediaRowProps {
   medias: Media[] | [],
   loading: boolean
 }
 
-interface VideoPlayerProps {
-  url: string;
-}
-
 interface GridCellProps {
-  url: string;
+  media: Media;
   className?: string;
 }
 
-const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
-  url 
-}) => (
-  <CldVideoPlayer 
-    width="1920" 
-    height="1080" 
-    src={url}
-    bigPlayButton={false} 
-    poster={ { src: "", crop: "fill" } } // NÂO REMOVER, MELHORA A QUALIDADE DA THUMB
-    logo={false}
-  />
-);
-
 const GridCell: React.FC<GridCellProps> = ({ 
-  url, 
+  media, 
   className 
-}) => (
-  <div className={className}>
-    <VideoPlayer url={url} />
-  </div>
-);
+}) => {
+  const mediaModal = useMediaModal();
+  const mediaThumb = media.url.replace('.mp4', '.jpg');
+
+  return (
+    <div className={className}>
+      <Image
+        width="1920"
+        height="1080"
+        src={mediaThumb}
+        alt="Video thumb"
+        className="cursor-pointer"
+        onClick={() => mediaModal.onOpen(media)}
+      />
+    </div>
+  )
+}
 
 const gridTemplate = [
   "col-span-2 row-span-2",
@@ -100,7 +96,7 @@ const MediaChunk: React.FC<MediaRowProps> = ({
           medias.map((media, index) => (
             <GridCell
               key={index}
-              url={media.url}
+              media={media}
               className={gridTemplate[index]}
             />
           ))
@@ -117,7 +113,7 @@ const MediaChunk: React.FC<MediaRowProps> = ({
           medias.map((media, index) => (
             <GridCell
               key={index}
-              url={media.url}
+              media={media}
               className={gridTemplateMobile[index]}
             />
           ))
