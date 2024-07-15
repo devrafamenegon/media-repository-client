@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import MediaRow from "./media-row";
+import MediaChunk from "./media-chunk";
 import { Media } from "@/types";
 import getMedias from "@/actions/get-medias";
 import { ErrorModal } from "./modals/error-modal";
@@ -45,9 +45,9 @@ const MediaGrid = () => {
     
       <div className="flex flex-col gap-2">
         {!loading ? (chunkArray(medias, 21).map((chunk, index) => (
-          <MediaRow key={index} medias={chunk} loading={loading} />
+          <MediaChunk key={index} medias={chunk} loading={loading} />
         ))) : (
-          <MediaRow medias={[]} loading={loading} />
+          <MediaChunk medias={[]} loading={loading} />
         )}
       </div>
     </>

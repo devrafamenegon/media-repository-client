@@ -88,7 +88,7 @@ const gridTemplateMobile = [
   "col-span-2 row-span-2",
 ];
 
-const MediaRow: React.FC<MediaRowProps> = ({ 
+const MediaChunk: React.FC<MediaRowProps> = ({ 
   medias, 
   loading 
 }) => {
@@ -131,4 +131,4 @@ const MediaRow: React.FC<MediaRowProps> = ({
   );
 }
 
-export default MediaRow;
+export default MediaChunk;
