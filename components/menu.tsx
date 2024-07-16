@@ -46,7 +46,7 @@ const Menu: React.FC<MenuProps> = ({
 
         {/* Dialog position */}
         <div className="fixed inset-0 z-40 flex">
-          <DialogPanel className="relative ml-auto flex h-full w-full flex-col overflow-y-auto py-4 pb-6 shadow-xl">
+          <DialogPanel className="relative ml-auto flex h-full w-full flex-col overflow-y-scroll py-4 pb-6 shadow-xl">
             
             {/* Close button */}
             <div className="flex items-center justify-end px-4 mr-4">
@@ -54,13 +54,13 @@ const Menu: React.FC<MenuProps> = ({
             </div>
 
             {/* Participants */}
-            <div className="p-4 flex flex-col">
+            <div className="flex flex-col mt-4 px-8">
               {routes.map((route) => (
-                <div key={route.href} className="relative">
+                <div key={route.href} className="relative mb-10 sm:mb-6">
                   <Link
                   href={route.href}
                   className={cn(
-                    "flex-1 text-9xl uppercase font-medium mb-6 transition-colors hover:text-primary",
+                    "text-6xl sm:text-8xl lg:text-9xl uppercase font-medium transition-all hover:text-primary",
                     route.active ? "text-primary" : "text-neutral-500"
                   )}
                 >
