@@ -8,7 +8,7 @@ import ModalProvider from "@/providers/modal-provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Media Repository Client",
+  title: "Acervo",
   description: "Media Repository Client",
 };
 
