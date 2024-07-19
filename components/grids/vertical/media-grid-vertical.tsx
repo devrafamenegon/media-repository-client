@@ -1,19 +1,25 @@
 'use client';
 
 import { useEffect, useState } from "react";
-import MediaChunk from "./media-chunk";
+import MediaChunkVertical from "./media-chunk-vertical";
 import { Media } from "@/types";
 import getMedias from "@/actions/get-medias";
-import { ErrorModal } from "./modals/error-modal";
+import { ErrorModal } from "@/components/modals/error-modal";
 
-const MediaGrid = () => {
+interface MediaGridProps {
+  participantId?: string,
+}
+
+const MediaGridVertical:React.FC<MediaGridProps> = ({
+  participantId,
+}) => {
   const [medias, setMediasData] = useState<Media[]>([]);
   const [loading, setLoading] = useState(true);
   const [openErrorModal, setOpenErrorModal] = useState(false);
 
   const fetchData = async () => {
     try {
-      const response = await getMedias();
+      const response = await getMedias({ participantId });
       setMediasData(response);
     } catch (error) {
       setOpenErrorModal(true);
@@ -45,13 +51,13 @@ const MediaGrid = () => {
     
       <div className="flex flex-col gap-2">
         {!loading ? (chunkArray(medias, 21).map((chunk, index) => (
-          <MediaChunk key={index} medias={chunk} loading={loading} />
+          <MediaChunkVertical key={index} medias={chunk} loading={loading} />
         ))) : (
-          <MediaChunk medias={[]} loading={loading} />
+          <MediaChunkVertical medias={[]} loading={loading} />
         )}
       </div>
     </>
   )
 }
 
-export default MediaGrid;
+export default MediaGridVertical;

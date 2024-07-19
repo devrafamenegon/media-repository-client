@@ -1,9 +1,9 @@
 
 
 import { Media } from "@/types";
-import { Skeleton } from "./ui/skeleton";
 import Image from "next/image";
 import useMediaModal from "@/hooks/use-media-modal";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface MediaRowProps {
   medias: Media[] | [],
@@ -84,7 +84,7 @@ const gridTemplateMobile = [
   "col-span-2 row-span-2",
 ];
 
-const MediaChunk: React.FC<MediaRowProps> = ({ 
+const MediaChunkVertical: React.FC<MediaRowProps> = ({ 
   medias, 
   loading 
 }) => {
@@ -127,4 +127,4 @@ const MediaChunk: React.FC<MediaRowProps> = ({
   );
 }
 
-export default MediaChunk;
+export default MediaChunkVertical;

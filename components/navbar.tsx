@@ -8,7 +8,7 @@ const Navbar = async () => {
   const participants = await getParticipants();
 
   return (
-    <div className="border-b">
+    <div className="w-full fixed border-b bg-background z-40">
       <div className="flex h-16 items-center px-4">
         <MainNav className="mx-6"/>
         <div className="ml-auto flex items-center space-x-4">
