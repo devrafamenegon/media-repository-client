@@ -1,9 +1,21 @@
 import { Media } from "@/types";
+import qs from "query-string";
 
 const URL = `${process.env.NEXT_PUBLIC_API_URL}/medias`;
 
-const getMedias = async (): Promise<Media[]> => {
-  const res = await fetch(URL);
+interface Query {
+  participantId?: string;
+}
+
+const getMedias = async (query: Query): Promise<Media[]> => {
+  const url = qs.stringifyUrl({
+    url: URL,
+    query: {
+      participantId: query.participantId,
+    }
+  })
+
+  const res = await fetch(url);
 
   return res.json()
 }
