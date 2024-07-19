@@ -63,6 +63,7 @@ const Menu: React.FC<MenuProps> = ({
                     "text-6xl sm:text-8xl lg:text-9xl uppercase font-medium transition-all hover:text-primary",
                     route.active ? "text-primary" : "text-neutral-500"
                   )}
+                  onClick={onClose}
                 >
                   {route.label}
                   <div className="absolute top-0 right-0 h-full">
