@@ -2,43 +2,43 @@ import { Media, Participant } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import GridCell from "../grid-cell";
 
-interface MediaRowProps {
-  medias: Media[] | [],
+interface MediaChunkHorizontalProps {
   loading: boolean,
-  participants: Participant[] | []
+  medias: Media[] | undefined,
+  participant: Participant | undefined,
 }
 
-const MediaChunkHorizontal: React.FC<MediaRowProps> = ({ 
-  medias, 
+const MediaChunkHorizontal: React.FC<MediaChunkHorizontalProps> = ({ 
   loading,
-  participants 
+  medias,
+  participant 
 }) => {
   return (
     <div className="flex flex-row h-full gap-4">
-      {!loading ? (
+      {!loading && medias && participant ? (
         <>
           <div className="grid gap-4">
             <GridCell
               media={medias[0]}
-              participant={participants.find((participant) => participant.id === medias[0]?.participantId)!}
+              participant={participant}
             />
             <GridCell
               media={medias[1]}
-              participant={participants.find((participant) => participant.id === medias[1]?.participantId)!}
+              participant={participant}
             />
           </div>
           <div className="grid gap-4">
             <GridCell
               media={medias[2]}
-              participant={participants.find((participant) => participant.id === medias[2]?.participantId)!}
+              participant={participant}
             />
             <GridCell
               media={medias[3]}
-              participant={participants.find((participant) => participant.id === medias[3]?.participantId)!}
+              participant={participant}
             />
             <GridCell
               media={medias[4]}
-              participant={participants.find((participant) => participant.id === medias[4]?.participantId)!}
+              participant={participant}
             />
           </div>
         </>

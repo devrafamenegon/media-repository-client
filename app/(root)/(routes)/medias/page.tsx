@@ -1,18 +1,25 @@
 'use client';
 
-import getParticipant from "@/actions/get-participant";
+import getMedias from "@/actions/get-medias";
+import getParticipants from "@/actions/get-participants";
 import { dirtyline } from "@/app/fonts";
 import MediaGridHorizontal from "@/components/grids/horizontal/media-grid-horizontal";
 import HorizontalScroll from "@/components/horizontal-scroll";
 import { Skeleton } from "@/components/ui/skeleton";
+import useMediaStore from "@/hooks/use-media-store";
+import useParticipantStore from "@/hooks/use-participant-store";
 import { cn } from "@/lib/utils";
-import { Participant } from "@/types";
+import { Media, Participant } from "@/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
 const MediasPage = () => {
+  const { medias, setMedias } = useMediaStore();
+  const { participants, setParticipants } = useParticipantStore();
+
   const [participant, setParticipant] = useState<Participant>();
+  const [participantMedias, setParticipantMedias] = useState<Media[]>([]);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -23,29 +30,57 @@ const MediasPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const participant = await getParticipant(participantId);
+        if (!medias.length) {
+          const mediasData = await getMedias();
+          setMedias(mediasData);
+        }
 
-        if (!participant) {
-          toast.error('Participant not found.');
-          router.push('/');
-        } else {
-          setParticipant(participant);
+        if (!participants.length) {
+          const participantsData = await getParticipants();          
+          setParticipants(participantsData);
         }
       } catch (error) {
-        console.log('[MediasPage] - fetchData - error while fetching participant data', error);
+        console.log('[MediasPage] - fetchData - error while fetching data', error);
         toast.error('Something went wrong.');
         router.push('/');
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchData();
-  }, [participantId, router]);
+  }, [
+      setMedias, 
+      setParticipants, 
+      router, 
+      medias, 
+      participants
+    ]
+  );
+
+  useEffect(() => {
+    if (medias.length && participants.length) {
+      const participant = participants.find((participant) => participant.id === participantId);
+
+      if (!participant) {
+        toast.error('Participant not found.');
+      } else {
+        setParticipant(participant);
+      }
+
+      const filteredMedias = medias.filter((media) => media.participantId === participantId);
+
+      if (!filteredMedias.length) {
+        toast.error('Medias with this participant not found.');
+      } else {
+        setParticipantMedias(filteredMedias);
+      }
+
+      setLoading(false);
+    }
+  }, [participantId, medias, participants]);
 
   return (
     <HorizontalScroll>
-      <div className="p-4 flex flex-row content-container">
+      <div className="mt-16 px-10 flex flex-row content-container">
         <div className={cn(
           dirtyline.className,
           "text-9xl font-semibold self-end text-primary mr-[400px]"
@@ -55,7 +90,11 @@ const MediasPage = () => {
           )}
         </div>
         <div className="z-30">
-          <MediaGridHorizontal participantId={participantId}/>
+          <MediaGridHorizontal 
+            loading={loading}
+            participant={participant}
+            medias={participantMedias}
+          />
         </div>
       </div>
     </HorizontalScroll>

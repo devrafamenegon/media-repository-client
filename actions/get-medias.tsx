@@ -7,11 +7,11 @@ interface Query {
   participantId?: string;
 }
 
-const getMedias = async (query: Query): Promise<Media[]> => {
+const getMedias = async (query?: Query): Promise<Media[]> => {
   const url = qs.stringifyUrl({
     url: URL,
     query: {
-      participantId: query.participantId,
+      participantId: query?.participantId,
     }
   })
 
