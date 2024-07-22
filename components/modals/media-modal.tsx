@@ -21,7 +21,7 @@ const MediaModal = () => {
     <Dialog open={mediaModal.isOpen} onOpenChange={onChange}>
       <DialogContent className="max-w-[90vw] sm:max-w-[60vw] border-0">
         <DialogHeader>
-          <DialogTitle>{media.label}</DialogTitle>
+          <DialogTitle>#{media.numericId} - {media.label}</DialogTitle>
           <DialogDescription>
             {media.id}
           </DialogDescription>
