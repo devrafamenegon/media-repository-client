@@ -19,6 +19,10 @@ const config = {
     },
     extend: {
       colors: {
+        tag: {
+          DEFAULT: "hsl(var(--tag-background))",
+          foreground: "hsl(var(--tag-foreground))"
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

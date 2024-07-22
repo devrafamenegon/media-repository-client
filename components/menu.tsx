@@ -4,28 +4,34 @@ import { ChevronRight, Menu as MenuIcon, X } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogPanel } from "@headlessui/react";
 
-import { Participant } from "@/types";
 import { Button } from "@/components/ui/button";
 import IconButton from "@/components/ui/icon-button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { dirtyline } from "@/app/fonts";
-
-interface MenuProps {
-  participants: Participant[];
-}
+import { dirtyline, glancyr } from "@/app/fonts";
+import useMediaStore from "@/hooks/use-media-store";
+import useParticipantStore from "@/hooks/use-participant-store";
 
 interface Routes {
   href: string;
-  label: JSX.Element[];
+  label: JSX.Element;
   active: boolean;
 }
 
-const Menu: React.FC<MenuProps> = ({ participants }) => {
+const Menu = () => {
   const pathname = usePathname();
+  const { medias } = useMediaStore();
+  const { participants } = useParticipantStore();
 
-  const routes: Routes[] = participants.map((participant) => {
+  const participantsWithMediaCount = participants.map((participant) => {
+    const mediaCount = medias.filter((media) => media.participantId === participant.id).length;
+    return { ...participant, mediaCount };
+  });
+
+  const sortedParticipants = participantsWithMediaCount.sort((a, b) => b.mediaCount - a.mediaCount);
+
+  const routes: Routes[] = sortedParticipants.map((participant) => {
     const label = participant.name;
     const randomIndex = Math.floor(Math.random() * label.length);
 
@@ -37,9 +43,19 @@ const Menu: React.FC<MenuProps> = ({ participants }) => {
         </span>
       ));
 
+    const combinedLabel = (
+      <div className="flex flex-col md:flex-row md:gap-6">
+        <span>{styledLabel}</span>
+        <div className={cn(
+          glancyr.className,
+          "px-2 pt-1 mb-0 text-base self-start md:mb-7 md:text-lg md:self-end rounded-md bg-tag text-tag-foreground"
+        )} >{participant.mediaCount}</div>
+      </div>
+    );
+
     return {
       href: `/medias?participantId=${participant.id}`,
-      label: styledLabel,
+      label: combinedLabel,
       active: pathname === `/medias?participantId=${participant.id}`,
     };
   });
@@ -71,12 +87,12 @@ const Menu: React.FC<MenuProps> = ({ participants }) => {
             {/* Participants */}
             <div className="flex flex-col mt-4 px-8">
               {routes.map((route) => (
-                <div key={route.href} className="relative mb-10 sm:mb-6">
+                <div key={route.href} className="relative mb-10 sm:mb-6 opacity-75 hover:opacity-100 transition-opacity">
                   <Link
                     href={route.href}
                     className={cn(
                       dirtyline.className,
-                      "text-6xl sm:text-8xl lg:text-9xl font-medium font-dirtyline transition-all hover:text-primary",
+                      "text-5xl sm:text-8xl lg:text-9xl font-medium font-dirtyline transition-all hover:text-primary",
                       route.active ? "text-primary" : "text-neutral-500"
                     )}
                     onClick={onClose}

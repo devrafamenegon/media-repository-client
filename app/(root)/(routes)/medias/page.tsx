@@ -2,7 +2,7 @@
 
 import getMedias from "@/actions/get-medias";
 import getParticipants from "@/actions/get-participants";
-import { dirtyline } from "@/app/fonts";
+import { dirtyline, glancyr } from "@/app/fonts";
 import MediaGridHorizontal from "@/components/grids/horizontal/media-grid-horizontal";
 import HorizontalScroll from "@/components/horizontal-scroll";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,7 @@ const MediasPage = () => {
 
   const [participant, setParticipant] = useState<Participant>();
   const [participantMedias, setParticipantMedias] = useState<Media[]>([]);
+  const [mediasCount, setMediasCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const router = useRouter();
@@ -52,7 +53,7 @@ const MediasPage = () => {
       setParticipants, 
       router, 
       medias, 
-      participants
+      participants,
     ]
   );
 
@@ -72,23 +73,33 @@ const MediasPage = () => {
         toast.error('Medias with this participant not found.');
       } else {
         setParticipantMedias(filteredMedias);
+        setMediasCount(medias.filter((media) => media.participantId === participant?.id).length)
       }
 
       setLoading(false);
     }
-  }, [participantId, medias, participants]);
+  }, [participantId, medias, participants, setMediasCount]);
 
   return (
     <HorizontalScroll>
       <div className="mt-16 px-10 flex flex-row content-container">
-        <div className={cn(
-          dirtyline.className,
-          "text-9xl font-semibold self-end text-primary mr-[400px]"
-        )}>
-          { !loading ? participant?.name : (
-            <Skeleton className="w-[600px] h-28"/>
-          )}
-        </div>
+          <div className={cn(
+            dirtyline.className,
+            "text-9xl font-semibold self-end text-primary mr-[400px] flex gap-6"
+          )}>
+            { !loading ? participant?.name : (
+              <Skeleton className="w-[600px] h-28"/>
+            )}
+            { !loading ? (
+              <div className={cn(
+                glancyr.className,
+                "px-2 pt-1 mb-7 text-lg self-end rounded-md bg-tag text-tag-foreground"
+              )}>{mediasCount}</div>
+            ) : (
+              <Skeleton className="w-[35px] h-10 self-end"/>
+            )}
+          </div>
+         
         <div className="z-30">
           <MediaGridHorizontal 
             loading={loading}
