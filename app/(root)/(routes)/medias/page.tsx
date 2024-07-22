@@ -1,9 +1,11 @@
 'use client';
 
 import getParticipant from "@/actions/get-participant";
+import { dirtyline } from "@/app/fonts";
 import MediaGridHorizontal from "@/components/grids/horizontal/media-grid-horizontal";
 import HorizontalScroll from "@/components/horizontal-scroll";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { Participant } from "@/types";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -44,7 +46,10 @@ const MediasPage = () => {
   return (
     <HorizontalScroll>
       <div className="p-4 flex flex-row content-container">
-        <div className="text-9xl font-semibold self-end text-primary uppercase mr-[400px]">
+        <div className={cn(
+          dirtyline.className,
+          "text-9xl font-semibold self-end text-primary mr-[400px]"
+        )}>
           { !loading ? participant?.name : (
             <Skeleton className="w-[600px] h-28"/>
           )}
