@@ -20,18 +20,20 @@ const GridCell: React.FC<GridCellProps> = ({
     return null;
   }
 
-   const { name, bgColor, txtColor } = participant;
-  const mediaThumb = media.url.replace('.mp4', '.jpg');
+  const { name, bgColor, txtColor } = participant;
+  const { isNsfw, label, url, numericId } = media;
+
+  const mediaThumb = url.replace('.mp4', '.jpg');
 
   return (
-    <div className={`relative cursor-pointer aspect-video ${className}`} onClick={() => mediaModal.onOpen(media)}>
-      {media.isNsfw ? (
+    <div className={`relative cursor-pointer aspect-video overflow-hidden ${className}`} onClick={() => mediaModal.onOpen(media)}>
+      {isNsfw ? (
         <Image
           width="1920"
           height="1080"
           src={mediaThumb}
           alt="Video thumb"
-          className="blur-sm"
+          className="blur-lg"
         />
       ) : (
         <Image
@@ -54,7 +56,7 @@ const GridCell: React.FC<GridCellProps> = ({
           className="opacity-30 hover:opacity-100 transition-opacity duration-300"
         />
         <div className="absolute top-4 right-4">
-        {media.isNsfw && (
+        {isNsfw && (
           <div className="flex px-2 rounded-md bg-red-900">
             <span className="font-semibold text-md text-white">NSFW</span>
           </div>
@@ -62,9 +64,9 @@ const GridCell: React.FC<GridCellProps> = ({
         </div>
         <div className="absolute flex gap-2 bottom-4 left-4">
           <div className="flex px-2 rounded-md" style={{ backgroundColor: bgColor }}>
-            <span className="font-semibold text-xl" style={{ color: txtColor }}>{name}</span>
+            <span className="font-semibold text-md uppercase" style={{ color: txtColor }}>{name}</span>
           </div>
-          <span className="line-clamp-1 text-white text-xl text-ellipsis overflow-hidden ...">{media.label}</span>
+          <span className="line-clamp-1 text-white text-md text-ellipsis overflow-hidden ...">{`#${numericId} - ${label}`}</span>
         </div>
       </div>
     </div>

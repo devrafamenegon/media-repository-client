@@ -1,30 +1,48 @@
 "use client";
 
-import { ArrowBigRight, ArrowRightIcon, ChevronRight, Menu as MenuIcon, X } from "lucide-react";
+import { ChevronRight, Menu as MenuIcon, X } from "lucide-react";
 import { useState } from "react";
 import { Dialog, DialogPanel } from "@headlessui/react";
 
-import { Participant, Routes } from "@/types";
+import { Participant } from "@/types";
 import { Button } from "@/components/ui/button";
 import IconButton from "@/components/ui/icon-button";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { dirtyline } from "@/app/fonts";
 
 interface MenuProps {
   participants: Participant[];
 }
 
-const Menu: React.FC<MenuProps> = ({
-  participants,
-}) => {
+interface Routes {
+  href: string;
+  label: JSX.Element[];
+  active: boolean;
+}
+
+const Menu: React.FC<MenuProps> = ({ participants }) => {
   const pathname = usePathname();
 
-  const routes: Routes[] = participants.map((route) => ({
-    href: `/medias?participantId=${route.id}`,
-    label: route.name,
-    active: pathname === `/medias?participantId=${route.id}`
-  }))
+  const routes: Routes[] = participants.map((participant) => {
+    const label = participant.name;
+    const randomIndex = Math.floor(Math.random() * label.length);
+
+    const styledLabel = label
+      .split('')
+      .map((char, index) => (
+        <span key={index} className={index === randomIndex ? 'uppercase' : ''}>
+          {char}
+        </span>
+      ));
+
+    return {
+      href: `/medias?participantId=${participant.id}`,
+      label: styledLabel,
+      active: pathname === `/medias?participantId=${participant.id}`,
+    };
+  });
 
   const [open, setIsOpen] = useState(false);
 
@@ -34,10 +52,7 @@ const Menu: React.FC<MenuProps> = ({
   return (
     <>
       <Button onClick={onOpen} variant="ghost" className="flex items-center rounded-full">
-        <MenuIcon
-          size={26}
-          className="hover:scale-110"
-        />
+        <MenuIcon size={26} className="hover:scale-110" />
       </Button>
 
       <Dialog open={open} as="div" className="relative z-40" onClose={onClose}>
@@ -58,18 +73,19 @@ const Menu: React.FC<MenuProps> = ({
               {routes.map((route) => (
                 <div key={route.href} className="relative mb-10 sm:mb-6">
                   <Link
-                  href={route.href}
-                  className={cn(
-                    "text-6xl sm:text-8xl lg:text-9xl uppercase font-medium transition-all hover:text-primary",
-                    route.active ? "text-primary" : "text-neutral-500"
-                  )}
-                  onClick={onClose}
-                >
-                  {route.label}
-                  <div className="absolute top-0 right-0 h-full">
-                    <ChevronRight  size="100%" />
-                  </div>
-                </Link>
+                    href={route.href}
+                    className={cn(
+                      dirtyline.className,
+                      "text-6xl sm:text-8xl lg:text-9xl font-medium font-dirtyline transition-all hover:text-primary",
+                      route.active ? "text-primary" : "text-neutral-500"
+                    )}
+                    onClick={onClose}
+                  >
+                    {route.label}
+                    <div className="absolute top-0 right-0 h-full">
+                      <ChevronRight size="100%" />
+                    </div>
+                  </Link>
                 </div>
               ))}
             </div>
@@ -77,7 +93,7 @@ const Menu: React.FC<MenuProps> = ({
         </div>
       </Dialog>
     </>
-  )
+  );
 };
 
 export default Menu;

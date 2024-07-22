@@ -1,5 +1,6 @@
 export interface Media {
   id: string
+  numericId: number
   label: string
   url: string
   participantId: string
