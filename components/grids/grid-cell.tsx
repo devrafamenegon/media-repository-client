@@ -26,7 +26,7 @@ const GridCell: React.FC<GridCellProps> = ({
   const mediaThumb = url.replace('.mp4', '.jpg');
 
   return (
-    <div className={`relative cursor-pointer aspect-video overflow-hidden ${className}`} onClick={() => mediaModal.onOpen(media)}>
+    <div className={`relative cursor-pointer aspect-video overflow-clip ${className}`} onClick={() => mediaModal.onOpen(media)}>
       {isNsfw ? (
         <Image
           width="1920"
