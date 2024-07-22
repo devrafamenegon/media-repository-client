@@ -4,8 +4,8 @@ import Play from "@/public/play.svg";
 import { Media, Participant } from "@/types";
 
 interface GridCellProps {
-  media: Media;
-  participant: Participant;
+  media: Media | undefined;
+  participant: Participant | undefined;
   className?: string;
 }
 
