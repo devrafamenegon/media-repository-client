@@ -2,11 +2,8 @@ import { MainNav } from "@/components/main-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SearchBar } from "./ui/search-bar";
 import Menu from "./menu";
-import getParticipants from "@/actions/get-participants";
 
 const Navbar = async () => {
-  const participants = await getParticipants();
-
   return (
     <div className="w-full fixed border-b bg-background z-40">
       <div className="flex h-16 items-center px-4">
@@ -14,7 +11,7 @@ const Navbar = async () => {
         <div className="ml-auto flex items-center space-x-4">
           <SearchBar />
           <ThemeToggle />
-          <Menu participants={participants} />
+          <Menu />
         </div>
       </div>
     </div>
