@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import MediaChunkVertical from "./media-chunk-vertical";
-import { Media } from "@/types";
+import { Media, Participant } from "@/types";
 import getMedias from "@/actions/get-medias";
 import { ErrorModal } from "@/components/modals/error-modal";
+import getParticipants from "@/actions/get-participants";
 
 interface MediaGridProps {
   participantId?: string,
@@ -14,16 +15,20 @@ const MediaGridVertical:React.FC<MediaGridProps> = ({
   participantId,
 }) => {
   const [medias, setMediasData] = useState<Media[]>([]);
+  const [participants, setParticipantsData] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [openErrorModal, setOpenErrorModal] = useState(false);
 
   const fetchData = async () => {
     try {
-      const response = await getMedias({ participantId });
-      setMediasData(response);
+      const medias = await getMedias({ participantId });
+      setMediasData(medias);
+
+      const participants = await getParticipants();
+      setParticipantsData(participants);
     } catch (error) {
       setOpenErrorModal(true);
-      console.log('[MediaGrid] - fetchData - error while fetching medias data', error);
+      console.log('[MediaGrid] - fetchData - error while fetching data', error);
     } finally {
       setLoading(false);
     }
@@ -51,9 +56,9 @@ const MediaGridVertical:React.FC<MediaGridProps> = ({
     
       <div className="flex flex-col gap-2">
         {!loading ? (chunkArray(medias, 21).map((chunk, index) => (
-          <MediaChunkVertical key={index} medias={chunk} loading={loading} />
+          <MediaChunkVertical key={index} medias={chunk} loading={loading} participants={participants}/>
         ))) : (
-          <MediaChunkVertical medias={[]} loading={loading} />
+          <MediaChunkVertical medias={[]} loading={loading} participants={[]}/>
         )}
       </div>
     </>

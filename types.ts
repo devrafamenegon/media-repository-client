@@ -3,11 +3,14 @@ export interface Media {
   label: string
   url: string
   participantId: string
+  isNsfw: string
 }
 
 export interface Participant {
   id: string
-  name: string
+  name: string,
+  txtColor: string,
+  bgColor: string
 }
 
 export interface Routes {
