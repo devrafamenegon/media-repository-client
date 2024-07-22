@@ -1,0 +1,16 @@
+<svg width="72" height="72" viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g id="_Play button" filter="url(#filter0_b_29_1214)">
+    <path id="Button" fill-rule="evenodd" clip-rule="evenodd"
+      d="M36 72C55.8823 72 72 55.8823 72 36C72 16.1177 55.8823 0 36 0C16.1177 0 0 16.1177 0 36C0 55.8823 16.1177 72 36 72ZM30.375 49.2049L50.625 37.8864C52.125 37.048 52.125 34.952 50.625 34.1136L30.375 22.7951C28.875 21.9567 27 23.0047 27 24.6815L27 47.3185C27 48.9953 28.875 50.0433 30.375 49.2049Z"
+      fill="white" fill-opacity="1" />
+  </g>
+  <defs>
+    <filter id="filter0_b_29_1214" x="-16" y="-16" width="104" height="104" filterUnits="userSpaceOnUse"
+      color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix" />
+      <feGaussianBlur in="BackgroundImageFix" stdDeviation="8" />
+      <feComposite in2="SourceAlpha" operator="in" result="effect1_backgroundBlur_29_1214" />
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_backgroundBlur_29_1214" result="shape" />
+    </filter>
+  </defs>
+</svg>
