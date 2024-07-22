@@ -1,39 +1,13 @@
 
 
-import { Media } from "@/types";
-import Image from "next/image";
-import useMediaModal from "@/hooks/use-media-modal";
+import { Media, Participant } from "@/types";
 import { Skeleton } from "@/components/ui/skeleton";
+import GridCell from "../grid-cell";
 
 interface MediaRowProps {
   medias: Media[] | [],
+  participants: Participant[] | [],
   loading: boolean
-}
-
-interface GridCellProps {
-  media: Media;
-  className?: string;
-}
-
-const GridCell: React.FC<GridCellProps> = ({ 
-  media, 
-  className 
-}) => {
-  const mediaModal = useMediaModal();
-  const mediaThumb = media.url.replace('.mp4', '.jpg');
-
-  return (
-    <div className={className}>
-      <Image
-        width="1920"
-        height="1080"
-        src={mediaThumb}
-        alt="Video thumb"
-        className="cursor-pointer"
-        onClick={() => mediaModal.onOpen(media)}
-      />
-    </div>
-  )
 }
 
 const gridTemplate = [
@@ -86,6 +60,7 @@ const gridTemplateMobile = [
 
 const MediaChunkVertical: React.FC<MediaRowProps> = ({ 
   medias, 
+  participants,
   loading 
 }) => {
   return (
@@ -93,13 +68,18 @@ const MediaChunkVertical: React.FC<MediaRowProps> = ({
       {/* DESKTOP */}
       <div className="hidden sm:grid grid-cols-4 gap-2" style={{ gridTemplateRows: 'max(1fr, 194px)' }}>
         {!loading ? (
-          medias.map((media, index) => (
-            <GridCell
-              key={index}
-              media={media}
-              className={gridTemplate[index]}
-            />
-          ))
+         medias.map((media, index) => {
+            const participant = participants.find((participant) => participant.id === media.participantId);
+            return ((media && participant) && (
+                <GridCell
+                  key={index}
+                  media={media}
+                  participant={participant}
+                  className={gridTemplate[index]}
+                />
+              )
+            )
+          })
         ) : (
           gridTemplate.map((style, index) => (
             <Skeleton key={index} className={`aspect-video ${style}`} />
@@ -110,13 +90,18 @@ const MediaChunkVertical: React.FC<MediaRowProps> = ({
       {/* MOBILE */}
       <div className="grid sm:hidden grid-cols-2 gap-1">
         {!loading ? (
-          medias.map((media, index) => (
-            <GridCell
-              key={index}
-              media={media}
-              className={gridTemplateMobile[index]}
-            />
-          ))
+          medias.map((media, index) => {
+            const participant = participants.find((participant) => participant.id === media.participantId);
+            return ((media && participant) && (
+                <GridCell
+                  key={index}
+                  media={media}
+                  participant={participant}
+                  className={gridTemplateMobile[index]}
+                />
+              )
+            )
+          })
         ) : (
           gridTemplateMobile.map((style, index) => (
             <Skeleton key={index} className={`aspect-video ${style}`} />
