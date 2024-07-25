@@ -10,7 +10,6 @@ interface MediaGridProps {
   participants: Participant[],
 }
 const MediaGridVertical:React.FC<MediaGridProps> = ({
-
   medias,
   participants,
   loading

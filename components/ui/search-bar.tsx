@@ -16,7 +16,7 @@ export function SearchBar() {
   }
 
   const onClick = () => {
-    inputValue ? router.push(`/medias?name=${inputValue}`) : router.push(`/`); 
+    inputValue ? router.push(`/medias/search?label=${inputValue}`) : router.push(`/`); 
   }
 
   return (
