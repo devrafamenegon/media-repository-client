@@ -7,13 +7,14 @@ import { ErrorModal } from "@/components/modals/error-modal";
 import useMediaStore from "@/hooks/use-media-store";
 import useParticipantStore from "@/hooks/use-participant-store";
 import { Media } from "@/types";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const SearchPage = () => {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const label = searchParams.get('label') || '';
-
+  
   const { medias, setMedias } = useMediaStore();
   const { participants, setParticipants } = useParticipantStore();
   
@@ -24,6 +25,12 @@ const SearchPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        if (label === 'genteboa') {
+          router.push('/medias/archived');
+        } else {
+          router.push('/')
+        }
+        
         if (!medias.length) {
           const mediasData = await getMedias();
           setMedias(mediasData);
