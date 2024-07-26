@@ -1,51 +1,53 @@
 "use client";
 
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import useSecurityModal from "@/hooks/use-security-modal";
+import { useState } from "react";
+import { Modal } from "../ui/modal";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
-const PasswordModal = () => {
-  const mediaModal = useSecurityModal();
-  const isOpen = useSecurityModal((state) => state.isOpen);
+const SecurityModal = () => {
+  const router = useRouter();
+  const securityModal = useSecurityModal();
   const [password, setPassword] = useState("");
-
-  const onChange = (open: boolean) => {
-    if (!open) {
-      mediaModal.onClose();
-    }
-  }
 
   const handleUnlock = (event: React.FormEvent) => {
     event.preventDefault();
-    mediaModal.onUnlock(password);
+    securityModal.onUnlock(password);
     setPassword("");
   }
 
+  const handleBack = () => {
+    router.push("/");
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onChange}>
-      <DialogContent className="max-w-[90vw] sm:max-w-[60vw] border-0">
-        <DialogHeader>
-          <DialogTitle>Enter Password to Unlock</DialogTitle>
-        </DialogHeader>
-        <div className="w-full flex justify-center items-center py-4">
-          <form onSubmit={handleUnlock} className="flex flex-col items-center gap-4">
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter password"
-              className="p-2 border rounded"
-            />
-            <Button type="submit" className="px-4 py-2 rounded">
-              Unlock
-            </Button>
-          </form>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <Modal 
+      title="Enter Password to Unlock"
+      description="Type the password to enter"
+      isOpen={securityModal.isOpen}
+      onClose={securityModal.onClose}
+    >
+      <div className="w-full flex justify-start items-center py-4">
+        <form onSubmit={handleUnlock} className="flex flex-col gap-4 w-full">
+          <Input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Enter password"
+            className="p-2 border rounded"
+          />
+          <Button type="submit" className="px-4 py-2 rounded">
+            Unlock
+          </Button>
+          <Button type="button" className="px-4 py-2 rounded" variant="outline" onClick={handleBack}>
+            Back
+          </Button>
+        </form>
+      </div>
+    </Modal>
   )
 };
 
-export default PasswordModal;
+export default SecurityModal;
