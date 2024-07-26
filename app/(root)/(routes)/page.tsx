@@ -6,11 +6,13 @@ import MediaGridVertical from "@/components/grids/vertical/media-grid-vertical";
 import { ErrorModal } from "@/components/modals/error-modal";
 import useMediaStore from "@/hooks/use-media-store";
 import useParticipantStore from "@/hooks/use-participant-store";
+import useSecurityModal from "@/hooks/use-security-modal";
 import { useEffect, useState } from "react";
 
 const HomePage = () => {
   const { medias, setMedias } = useMediaStore();
   const { participants, setParticipants } = useParticipantStore();
+  const securityModal = useSecurityModal();
 
   const [loading, setLoading] = useState(true);
   const [openErrorModal, setOpenErrorModal] = useState(false);
@@ -34,7 +36,10 @@ const HomePage = () => {
         setLoading(false);
       }
     }
-
+ 
+    securityModal.onLock();
+    securityModal.onClose();
+    
     fetchData();
   }, []);
 

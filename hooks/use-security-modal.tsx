@@ -1,3 +1,4 @@
+import checkArchivedSecret from "@/actions/check-archived-secret";
 import { create } from "zustand";
 
 interface SecurityModalStore {
@@ -6,6 +7,7 @@ interface SecurityModalStore {
   onOpen: () => void;
   onClose: () => void;
   onUnlock: (password: string) => void;
+  onLock: () => void;
 }
 
 const useSecurityModal = create<SecurityModalStore>((set) => ({
@@ -13,11 +15,21 @@ const useSecurityModal = create<SecurityModalStore>((set) => ({
   locked: true,
   onOpen: () => set({ isOpen: true }),
   onClose: () => set({ isOpen: false }),
-  onUnlock: (password: string) => {
-    if (password === process.env.SECRET) {
-      set({ locked: false });
+  onUnlock: async (password: string) => {
+    try {
+      const { success } = await checkArchivedSecret(password);
+
+      if (success) {
+        set({ 
+          locked: false, 
+          isOpen: false 
+        });
+      }
+    } catch (error) {
+      console.log('[useSecurityModal] - fetchData - error while fetching data', error);
     }
-  }
+  },
+  onLock: () => set({ locked: true })
 }));
 
 export default useSecurityModal;

@@ -25,10 +25,8 @@ const SearchPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        if (label === 'genteboa') {
+        if (label === process.env.NEXT_PUBLIC_SEARCH_SECRET?.toString()) {
           router.push('/medias/archived');
-        } else {
-          router.push('/')
         }
         
         if (!medias.length) {

@@ -1,9 +1,9 @@
 "use client";
 
-import MediaModal from "@/components/modals/media-modal";
+import SecurityModal from "@/components/modals/security-modal";
 import { useEffect, useState } from "react";
 
-const ModalProvider = () => {
+const SecurityModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -16,9 +16,9 @@ const ModalProvider = () => {
 
   return (
     <>
-      <MediaModal />
+      <SecurityModal />
     </>
   )
 }
 
-export default ModalProvider;
+export default SecurityModalProvider;
