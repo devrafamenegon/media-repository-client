@@ -11,36 +11,40 @@ import { useEffect, useState } from "react";
 
 export default function ArchivedPage() {
   const { participants, setParticipants } = useParticipantStore();
-  const { isOpen, onOpen, onClose, onUnlock, locked } = useSecurityModal();
+
+  const onOpen = useSecurityModal((state) => state.onOpen);
+  const isOpen = useSecurityModal((state) => state.isOpen);
+  const locked = useSecurityModal((state) => state.locked);
 
   const [loading, setLoading] = useState(true);
   const [openErrorModal, setOpenErrorModal] = useState(false);
   const [archivedMedias, setArchivedMedias] = useState<Media[]>();
 
   useEffect(() => {
-    const fetchData = async () => {
-      try { 
-        if (!isOpen) onOpen();
+    if (!isOpen && locked) onOpen();
 
-        if (!archivedMedias) {
-          const mediasData = await getArchivedMedias();
-          setArchivedMedias(mediasData);
-        }
+    if (!locked) {
+      const fetchData = async () => {
+        try { 
+          if (!archivedMedias) {
+            const mediasData = await getArchivedMedias();
+            setArchivedMedias(mediasData);
+          }
 
-        if (!participants.length) {
-          const participantsData = await getParticipants();
-          setParticipants(participantsData);
+          if (!participants.length) {
+            const participantsData = await getParticipants();
+            setParticipants(participantsData);
+          }
+        } catch (error) {
+          setOpenErrorModal(true);
+          console.log('[ArchivedPage] - fetchData - error while fetching data', error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        setOpenErrorModal(true);
-        console.log('[ArchivedPage] - fetchData - error while fetching data', error);
-      } finally {
-        setLoading(false);
       }
+      fetchData();
     }
-
-    fetchData();
-  }, []);
+  }, [isOpen, onOpen, locked]);
 
   return (
     <>
@@ -51,11 +55,13 @@ export default function ArchivedPage() {
       />
 
       <div className="pt-16 p-2">
-        <MediaGridVertical 
-          loading={loading}
-          medias={archivedMedias || []}
-          participants={participants}
-        />
+        {!locked && (
+          <MediaGridVertical 
+            loading={loading}
+            medias={archivedMedias || []}
+            participants={participants}
+          />
+        )}
       </div>
     </>
   );
