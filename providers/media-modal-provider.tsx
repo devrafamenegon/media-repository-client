@@ -3,7 +3,7 @@
 import MediaModal from "@/components/modals/media-modal";
 import { useEffect, useState } from "react";
 
-const ModalProvider = () => {
+const MediaModalProvider = () => {
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -21,4 +21,4 @@ const ModalProvider = () => {
   )
 }
 
-export default ModalProvider;
+export default MediaModalProvider;
