@@ -6,6 +6,7 @@ import { dirtyline, glancyr } from "@/app/fonts";
 import MediaGridHorizontal from "@/components/grids/horizontal/media-grid-horizontal";
 import HorizontalScroll from "@/components/horizontal-scroll";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import useMediaStore from "@/hooks/use-media-store";
 import useParticipantStore from "@/hooks/use-participant-store";
 import { cn } from "@/lib/utils";
@@ -99,6 +100,19 @@ const MediasPage = () => {
               <Skeleton className="w-[35px] h-10 self-end"/>
             )}
           </div>
+
+          {participantId && (
+            <div className="self-end mb-7">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => router.push(`/shorts?participantId=${participantId}`)}
+                disabled={loading}
+              >
+                Shorts
+              </Button>
+            </div>
+          )}
          
         <div className="z-30">
           <MediaGridHorizontal 

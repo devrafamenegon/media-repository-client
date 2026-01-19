@@ -6,17 +6,7 @@ import Link from "next/link";
 import useParticipantStore from "@/hooks/use-participant-store";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import toast from "react-hot-toast";
-
-import getReactionTypes from "@/actions/get-reaction-types";
-import getMediaReactions, { MediaReactionsResponse } from "@/actions/get-media-reactions";
-import setMediaReaction from "@/actions/set-media-reaction";
-import deleteMediaReaction from "@/actions/delete-media-reaction";
-import registerMediaView from "@/actions/register-media-view";
-import getMediaComments from "@/actions/get-media-comments";
-import createMediaComment from "@/actions/create-media-comment";
-import deleteMediaComment from "@/actions/delete-media-comment";
-import { MediaComment, ReactionType } from "@/types";
+import { useMediaEngagement } from "@/hooks/use-media-engagement";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Skeleton } from "../ui/skeleton";
@@ -28,17 +18,9 @@ const MediaModal = () => {
   const { participants } = useParticipantStore();
   const { userId } = useAuth();
 
-  const [reactionTypes, setReactionTypes] = useState<ReactionType[]>([]);
-  const [reactions, setReactions] = useState<MediaReactionsResponse | null>(null);
-  const [viewCount, setViewCount] = useState<number | null>(null);
-  const [comments, setComments] = useState<MediaComment[]>([]);
-  const [commentBody, setCommentBody] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showAllComments, setShowAllComments] = useState(false);
   const [reactionsMenuOpen, setReactionsMenuOpen] = useState(false);
   const [canHover, setCanHover] = useState(false);
-  const latestReactSeqByTypeRef = useRef<Record<string, number>>({});
-  const pendingDesiredSelectedByTypeRef = useRef<Record<string, boolean>>({});
   const reactionsTriggerRef = useRef<HTMLButtonElement | null>(null);
   const reactionsContentRef = useRef<HTMLDivElement | null>(null);
 
@@ -55,15 +37,24 @@ const MediaModal = () => {
 
   const id = mediaId ?? "";
 
-  const countsByTypeId = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const item of reactions?.counts ?? []) {
-      map.set(item.reactionTypeId, item.count);
-    }
-    return map;
-  }, [reactions]);
-
-  const myReactionTypeIds = reactions?.myReactionTypeIds ?? [];
+  const {
+    loading,
+    reactionTypes,
+    reactions,
+    viewCount,
+    comments,
+    commentBody,
+    setCommentBody,
+    countsByTypeId,
+    myReactionTypeIds,
+    onReact,
+    onSubmitComment,
+    onDeleteComment,
+  } = useMediaEngagement({
+    enabled: mediaModal.isOpen,
+    mediaId,
+    userId,
+  });
 
   const onChange = (open: boolean) => {
     if (!open) {
@@ -72,47 +63,9 @@ const MediaModal = () => {
   }
 
   useEffect(() => {
-    let cancelled = false;
-
-    const run = async () => {
-      if (!mediaModal.isOpen) return;
-      if (!mediaId) return;
-      if (!userId) return;
-
-      setLoading(true);
-      setReactions(null);
-      setViewCount(null);
-      setComments([]);
-      setCommentBody("");
-      setShowAllComments(false);
-
-      try {
-        const [viewRes, typesRes, reactionsRes, commentsRes] = await Promise.all([
-          registerMediaView(mediaId),
-          getReactionTypes(),
-          getMediaReactions(mediaId),
-          getMediaComments(mediaId),
-        ]);
-
-        if (cancelled) return;
-        setViewCount(viewRes?.viewCount ?? null);
-        setReactionTypes(typesRes ?? []);
-        setReactions(reactionsRes ?? null);
-        setComments(commentsRes ?? []);
-      } catch (error) {
-        console.log("[MediaModal] - error while fetching modal data", error);
-        toast.error("Something went wrong.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    run();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [mediaModal.isOpen, mediaId, userId]);
+    if (!mediaModal.isOpen) return;
+    setShowAllComments(false);
+  }, [mediaModal.isOpen, mediaId]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -185,134 +138,6 @@ const MediaModal = () => {
     document.addEventListener("pointermove", onMove);
     return () => document.removeEventListener("pointermove", onMove);
   }, [canHover, reactionsMenuOpen]);
-
-  const onReact = async (reactionTypeId: string) => {
-    if (!mediaId) return;
-    if (!userId) return;
-
-    const prev = reactions;
-    let reactReqId = "";
-    let reactSeq = 0;
-    try {
-      const alreadySelected = myReactionTypeIds.includes(reactionTypeId);
-      const desiredSelected = !alreadySelected;
-
-      reactReqId = `react_${Date.now()}_${Math.random().toString(16).slice(2)}`;
-      reactSeq = (latestReactSeqByTypeRef.current[reactionTypeId] ?? 0) + 1;
-      latestReactSeqByTypeRef.current[reactionTypeId] = reactSeq;
-      pendingDesiredSelectedByTypeRef.current[reactionTypeId] = desiredSelected;
-
-      // Atualização otimista (UI instantânea)
-      const optimisticCounts = new Map(countsByTypeId);
-      const optimisticMy = new Set(myReactionTypeIds);
-
-      if (alreadySelected) {
-        optimisticMy.delete(reactionTypeId);
-        optimisticCounts.set(
-          reactionTypeId,
-          Math.max(0, (optimisticCounts.get(reactionTypeId) ?? 0) - 1)
-        );
-      } else {
-        optimisticMy.add(reactionTypeId);
-        optimisticCounts.set(
-          reactionTypeId,
-          (optimisticCounts.get(reactionTypeId) ?? 0) + 1
-        );
-      }
-
-      setReactions({
-        counts: Array.from(optimisticCounts.entries()).map(([id, count]) => ({
-          reactionTypeId: id,
-          count,
-        })),
-        myReactionTypeIds: Array.from(optimisticMy),
-        // preserva os nomes no hover durante a fase otimista (evita "sumir e voltar")
-        topReactorsByType: prev?.topReactorsByType,
-      });
-
-      const requestStartedAt = Date.now();
-
-      const next = alreadySelected
-        ? await deleteMediaReaction(mediaId, reactionTypeId)
-        : await setMediaReaction(mediaId, reactionTypeId);
-
-      // Se o usuário clicou de novo enquanto esta request estava em andamento,
-      // não podemos aplicar uma resposta antiga (isso causa o "pisca").
-      if ((latestReactSeqByTypeRef.current[reactionTypeId] ?? 0) !== reactSeq) {
-        return;
-      }
-
-      // Confirmação chegou para o último clique deste tipo -> remove pendência deste tipo
-      delete pendingDesiredSelectedByTypeRef.current[reactionTypeId];
-
-      // Aplica resposta do servidor + reaplica pendências otimistas de OUTROS tipos (evita "piscar" entre snapshots)
-      const applyPendingOverlay = (base: MediaReactionsResponse): MediaReactionsResponse => {
-        const countsMap = new Map<string, number>();
-        for (const c of base.counts ?? []) countsMap.set(c.reactionTypeId, c.count);
-        const mySet = new Set<string>(base.myReactionTypeIds ?? []);
-
-        for (const [typeId, desired] of Object.entries(pendingDesiredSelectedByTypeRef.current)) {
-          const has = mySet.has(typeId);
-          if (desired && !has) {
-            mySet.add(typeId);
-            countsMap.set(typeId, (countsMap.get(typeId) ?? 0) + 1);
-          } else if (!desired && has) {
-            mySet.delete(typeId);
-            const nextCount = Math.max(0, (countsMap.get(typeId) ?? 0) - 1);
-            if (nextCount <= 0) countsMap.delete(typeId);
-            else countsMap.set(typeId, nextCount);
-          }
-        }
-
-        return {
-          ...base,
-          counts: Array.from(countsMap.entries()).map(([id, count]) => ({ reactionTypeId: id, count })),
-          myReactionTypeIds: Array.from(mySet),
-        };
-      };
-
-      const merged = applyPendingOverlay(next);
-
-      setReactions(merged);
-    } catch (error) {
-      console.log("[MediaModal] - onReact - error", error);
-      toast.error("Something went wrong.");
-      // Se já houve outro clique depois, evita rollback "antigo" que também causa flicker.
-      if ((latestReactSeqByTypeRef.current[reactionTypeId] ?? 0) !== reactSeq) {
-        return;
-      }
-      delete pendingDesiredSelectedByTypeRef.current[reactionTypeId];
-      setReactions(prev ?? null);
-    }
-  };
-
-  const onSubmitComment = async () => {
-    if (!mediaId) return;
-    if (!userId) return;
-    if (!commentBody.trim()) return;
-
-    try {
-      const created = await createMediaComment(mediaId, commentBody.trim());
-      setComments((prev) => [created, ...prev]);
-      setCommentBody("");
-    } catch (error) {
-      console.log("[MediaModal] - onSubmitComment - error", error);
-      toast.error("Something went wrong.");
-    }
-  };
-
-  const onDeleteComment = async (commentId: string) => {
-    if (!mediaId) return;
-    if (!userId) return;
-
-    try {
-      await deleteMediaComment(mediaId, commentId);
-      setComments((prev) => prev.filter((c) => c.id !== commentId));
-    } catch (error) {
-      console.log("[MediaModal] - onDeleteComment - error", error);
-      toast.error("Something went wrong.");
-    }
-  };
 
   const numericIdText = numericId ?? "";
   const labelText = label ?? "";
