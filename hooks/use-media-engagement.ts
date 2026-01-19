@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { useAuth } from "@clerk/nextjs";
 
 import getReactionTypes from "@/actions/get-reaction-types";
 import getMediaReactions, { MediaReactionsResponse } from "@/actions/get-media-reactions";
@@ -18,6 +19,7 @@ type Params = {
 };
 
 export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) => {
+  const { getToken } = useAuth();
   const [reactionTypes, setReactionTypes] = useState<ReactionType[]>([]);
   const [reactions, setReactions] = useState<MediaReactionsResponse | null>(null);
   const [viewCount, setViewCount] = useState<number | null>(null);
@@ -62,6 +64,8 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
       pendingDesiredSelectedByTypeRef.current = {};
 
       try {
+        const token = await getToken();
+
         const safe = async <T,>(name: string, fn: () => Promise<T>): Promise<T> => {
           try {
             return await fn();
@@ -71,10 +75,10 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
         };
 
         const [viewRes, typesRes, reactionsRes, commentsRes] = await Promise.all([
-          safe("registerMediaView", () => registerMediaView(mediaId)),
+          safe("registerMediaView", () => registerMediaView(mediaId, token)),
           safe("getReactionTypes", () => getReactionTypes()),
-          safe("getMediaReactions", () => getMediaReactions(mediaId)),
-          safe("getMediaComments", () => getMediaComments(mediaId)),
+          safe("getMediaReactions", () => getMediaReactions(mediaId, token)),
+          safe("getMediaComments", () => getMediaComments(mediaId, token)),
         ]);
 
         if (cancelled) return;
@@ -106,6 +110,7 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
     let reactSeq = 0;
 
     try {
+      const token = await getToken();
       const currentMy = prev?.myReactionTypeIds ?? [];
       const alreadySelected = currentMy.includes(reactionTypeId);
       const desiredSelected = !alreadySelected;
@@ -140,8 +145,8 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
       });
 
       const next = alreadySelected
-        ? await deleteMediaReaction(mediaId, reactionTypeId)
-        : await setMediaReaction(mediaId, reactionTypeId);
+        ? await deleteMediaReaction(mediaId, reactionTypeId, token)
+        : await setMediaReaction(mediaId, reactionTypeId, token);
 
       // stale (mesmo tipo)
       if ((latestReactSeqByTypeRef.current[reactionTypeId] ?? 0) !== reactSeq) {
@@ -197,7 +202,8 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
     if (!commentBody.trim()) return;
 
     try {
-      const created = await createMediaComment(mediaId, commentBody.trim());
+      const token = await getToken();
+      const created = await createMediaComment(mediaId, commentBody.trim(), token);
       setComments((prev) => [created, ...prev]);
       setCommentBody("");
     } catch (error) {
@@ -212,7 +218,8 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
     if (!userId) return;
 
     try {
-      await deleteMediaComment(mediaId, commentId);
+      const token = await getToken();
+      await deleteMediaComment(mediaId, commentId, token);
       setComments((prev) => prev.filter((c) => c.id !== commentId));
     } catch (error) {
       console.log("[useMediaEngagement] - onDeleteComment - error", error);

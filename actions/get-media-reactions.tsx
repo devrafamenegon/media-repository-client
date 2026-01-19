@@ -8,8 +8,14 @@ export type MediaReactionsResponse = {
   topReactorsByType?: Record<string, { names: string[]; moreCount: number }>;
 };
 
-const getMediaReactions = async (mediaId: string): Promise<MediaReactionsResponse> => {
-  return fetchJson<MediaReactionsResponse>(`${URL}/${mediaId}/reactions`, { credentials: "include" });
+const getMediaReactions = async (
+  mediaId: string,
+  token?: string | null
+): Promise<MediaReactionsResponse> => {
+  return fetchJson<MediaReactionsResponse>(`${URL}/${mediaId}/reactions`, {
+    credentials: token ? "omit" : "include",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
 };
 
 export default getMediaReactions;

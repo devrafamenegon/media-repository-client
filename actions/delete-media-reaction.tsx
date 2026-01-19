@@ -3,11 +3,18 @@ import { fetchJson } from "./fetch-json";
 
 const URL = `${process.env.NEXT_PUBLIC_API_URL}/medias`;
 
-const deleteMediaReaction = async (mediaId: string, reactionTypeId: string): Promise<MediaReactionsResponse> => {
+const deleteMediaReaction = async (
+  mediaId: string,
+  reactionTypeId: string,
+  token?: string | null
+): Promise<MediaReactionsResponse> => {
   return fetchJson<MediaReactionsResponse>(`${URL}/${mediaId}/reactions`, {
     method: "DELETE",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    credentials: token ? "omit" : "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({ reactionTypeId }),
   });
 };
