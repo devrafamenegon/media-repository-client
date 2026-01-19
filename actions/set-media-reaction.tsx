@@ -6,7 +6,8 @@ const URL = `${process.env.NEXT_PUBLIC_API_URL}/medias`;
 const setMediaReaction = async (
   mediaId: string,
   reactionTypeId: string,
-  token?: string | null
+  token?: string | null,
+  meta?: { authorName?: string | null }
 ): Promise<MediaReactionsResponse> => {
   return fetchJson<MediaReactionsResponse>(`${URL}/${mediaId}/reactions`, {
     method: "POST",
@@ -15,7 +16,7 @@ const setMediaReaction = async (
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ reactionTypeId }),
+    body: JSON.stringify({ reactionTypeId, authorName: meta?.authorName ?? null }),
   });
 };
 

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 
 import getReactionTypes from "@/actions/get-reaction-types";
 import getMediaReactions, { MediaReactionsResponse } from "@/actions/get-media-reactions";
@@ -21,6 +21,7 @@ type Params = {
 
 export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) => {
   const { getToken } = useAuth();
+  const { user } = useUser();
   const [reactionTypes, setReactionTypes] = useState<ReactionType[]>([]);
   const [reactions, setReactions] = useState<MediaReactionsResponse | null>(null);
   const [viewCount, setViewCount] = useState<number | null>(null);
@@ -149,9 +150,11 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
         topReactorsByType: prev?.topReactorsByType,
       });
 
+      const authorName = user?.fullName || user?.username || user?.primaryEmailAddress?.emailAddress || "User";
+
       const next = alreadySelected
         ? await deleteMediaReaction(mediaId, reactionTypeId, token)
-        : await setMediaReaction(mediaId, reactionTypeId, token);
+        : await setMediaReaction(mediaId, reactionTypeId, token, { authorName });
 
       // stale (mesmo tipo)
       if ((latestReactSeqByTypeRef.current[reactionTypeId] ?? 0) !== reactSeq) {
@@ -210,7 +213,12 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
       const clerkToken = await getToken();
       if (!clerkToken) throw new Error("Not authenticated");
       const token = await exchangeAdminToken(clerkToken);
-      const created = await createMediaComment(mediaId, commentBody.trim(), token);
+      const authorName = user?.fullName || user?.username || user?.primaryEmailAddress?.emailAddress || "User";
+      const authorImageUrl = user?.imageUrl || null;
+      const created = await createMediaComment(mediaId, commentBody.trim(), token, {
+        authorName,
+        authorImageUrl,
+      });
       setComments((prev) => [created, ...prev]);
       setCommentBody("");
     } catch (error) {

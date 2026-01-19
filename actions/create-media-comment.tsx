@@ -6,7 +6,8 @@ const URL = `${process.env.NEXT_PUBLIC_API_URL}/medias`;
 const createMediaComment = async (
   mediaId: string,
   body: string,
-  token?: string | null
+  token?: string | null,
+  meta?: { authorName?: string | null; authorImageUrl?: string | null }
 ): Promise<MediaComment> => {
   return fetchJson<MediaComment>(`${URL}/${mediaId}/comments`, {
     method: "POST",
@@ -15,7 +16,11 @@ const createMediaComment = async (
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ body }),
+    body: JSON.stringify({
+      body,
+      authorName: meta?.authorName ?? null,
+      authorImageUrl: meta?.authorImageUrl ?? null,
+    }),
   });
 };
 
