@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import toast from "react-hot-toast";
+import { Volume2, VolumeX } from "lucide-react";
 
 import getMediaFeed from "@/actions/get-media-feed";
 import { Media } from "@/types";
@@ -33,6 +34,7 @@ const ShortsViewer = ({ participantId }: Props) => {
   const [nextCursor, setNextCursor] = useState<number | null>(0);
   const [loadingFeed, setLoadingFeed] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const activeMedia = useMemo(() => items.find((m) => m.id === activeId) ?? null, [items, activeId]);
@@ -107,6 +109,7 @@ const ShortsViewer = ({ participantId }: Props) => {
     for (const [id, v] of Object.entries(videoRefs.current)) {
       if (!v) continue;
       if (id === activeId) {
+        v.muted = isMuted;
         v.play().catch(() => {});
       } else {
         try {
@@ -114,7 +117,16 @@ const ShortsViewer = ({ participantId }: Props) => {
         } catch {}
       }
     }
-  }, [activeId]);
+  }, [activeId, isMuted]);
+
+  const toggleMute = () => {
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    if (activeId) {
+      const v = videoRefs.current[activeId];
+      if (v) v.muted = nextMuted;
+    }
+  };
 
   // prefetch
   useEffect(() => {
@@ -470,19 +482,15 @@ const ShortsViewer = ({ participantId }: Props) => {
                     }}
                     src={m.url}
                     playsInline
-                    muted
+                    muted={isMuted}
                     controls
                     onError={(e) => {
                       const v = e.currentTarget;
-                      // #region agent log
-                      fetch('http://127.0.0.1:7242/ingest/98543d2a-0de0-4c31-819d-abdaf7952873',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'shorts-engagement-1',hypothesisId:'H4',location:'shorts-viewer.tsx:video_onError',message:'video error',data:{mediaId:m.id,activeId,muted:v.muted,currentSrc:v.currentSrc,errorCode:v.error?.code??null},timestamp:Date.now()})}).catch(()=>{});
-                      // #endregion
+                      void v; // mantém handler para debug local, sem logs externos
                     }}
                     onLoadedMetadata={(e) => {
                       const v = e.currentTarget;
-                      // #region agent log
-                      fetch('http://127.0.0.1:7242/ingest/98543d2a-0de0-4c31-819d-abdaf7952873',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'shorts-engagement-1',hypothesisId:'H4',location:'shorts-viewer.tsx:video_loadedmetadata',message:'video loadedmetadata',data:{mediaId:m.id,activeId,muted:v.muted,duration:isFinite(v.duration)?Math.round(v.duration):null},timestamp:Date.now()})}).catch(()=>{});
-                      // #endregion
+                      void v;
                     }}
                     className="h-[100vh] w-full object-contain"
                   />
@@ -495,6 +503,14 @@ const ShortsViewer = ({ participantId }: Props) => {
               <Skeleton className="h-10 w-40" />
             </div>
           )}
+        </div>
+
+        {/* Toggle de áudio: autoplay com som é bloqueado pelos browsers, então começamos mutado */}
+        <div className="fixed top-20 right-4 z-30">
+          <Button type="button" variant="secondary" onClick={toggleMute} className="rounded-full gap-2">
+            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+            <span className="hidden md:inline">{isMuted ? "Sem som" : "Com som"}</span>
+          </Button>
         </div>
 
         {/* Mobile: botão flutuante para abrir painel */}

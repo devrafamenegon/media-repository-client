@@ -1,10 +1,10 @@
 import { MediaComment } from "@/types";
+import { fetchJson } from "./fetch-json";
 
 const URL = `${process.env.NEXT_PUBLIC_API_URL}/medias`;
 
 const getMediaComments = async (mediaId: string): Promise<MediaComment[]> => {
-  const res = await fetch(`${URL}/${mediaId}/comments`, { credentials: "include" });
-  return res.json();
+  return fetchJson<MediaComment[]>(`${URL}/${mediaId}/comments`, { credentials: "include" });
 };
 
 export default getMediaComments;

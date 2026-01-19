@@ -1,4 +1,5 @@
 import { MediaReactionsResponse } from "./get-media-reactions";
+import { fetchJson } from "./fetch-json";
 
 const URL = `${process.env.NEXT_PUBLIC_API_URL}/medias`;
 
@@ -6,13 +7,12 @@ const setMediaReaction = async (
   mediaId: string,
   reactionTypeId: string
 ): Promise<MediaReactionsResponse> => {
-  const res = await fetch(`${URL}/${mediaId}/reactions`, {
+  return fetchJson<MediaReactionsResponse>(`${URL}/${mediaId}/reactions`, {
     method: "POST",
     credentials: "include",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ reactionTypeId }),
   });
-
-  return res.json();
 };
 
 export default setMediaReaction;

@@ -51,10 +51,6 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
       if (!mediaId) return;
       if (!userId) return;
 
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/98543d2a-0de0-4c31-819d-abdaf7952873',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'shorts-engagement-1',hypothesisId:'H1',location:'use-media-engagement.ts:run_start',message:'engagement fetch start',data:{mediaId,enabled,hasUserId:Boolean(userId)},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-
       setLoading(true);
       setReactions(null);
       setViewCount(null);
@@ -70,9 +66,6 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
           try {
             return await fn();
           } catch (e) {
-            // #region agent log
-            fetch('http://127.0.0.1:7242/ingest/98543d2a-0de0-4c31-819d-abdaf7952873',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'shorts-engagement-1',hypothesisId:'H2',location:'use-media-engagement.ts:run_error',message:'engagement fetch failed',data:{mediaId,name,error:String(e)},timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
             throw e;
           }
         };
@@ -89,13 +82,9 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
         setReactionTypes(typesRes ?? []);
         setReactions(reactionsRes ?? null);
         setComments(commentsRes ?? []);
-
-        // #region agent log
-        fetch('http://127.0.0.1:7242/ingest/98543d2a-0de0-4c31-819d-abdaf7952873',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'shorts-engagement-1',hypothesisId:'H3',location:'use-media-engagement.ts:run_success',message:'engagement fetch success',data:{mediaId,viewCount:viewRes?.viewCount??null,typesLen:typesRes?.length??0,countsLen:reactionsRes?.counts?.length??0,commentsLen:commentsRes?.length??0},timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
       } catch (error) {
         console.log("[useMediaEngagement] - error while fetching", error);
-        toast.error("Something went wrong.");
+        toast.error(error instanceof Error ? error.message : "Something went wrong.");
       } finally {
         if (!cancelled) setLoading(false);
       }
