@@ -472,6 +472,18 @@ const ShortsViewer = ({ participantId }: Props) => {
                     playsInline
                     muted
                     controls
+                    onError={(e) => {
+                      const v = e.currentTarget;
+                      // #region agent log
+                      fetch('http://127.0.0.1:7242/ingest/98543d2a-0de0-4c31-819d-abdaf7952873',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'shorts-engagement-1',hypothesisId:'H4',location:'shorts-viewer.tsx:video_onError',message:'video error',data:{mediaId:m.id,activeId,muted:v.muted,currentSrc:v.currentSrc,errorCode:v.error?.code??null},timestamp:Date.now()})}).catch(()=>{});
+                      // #endregion
+                    }}
+                    onLoadedMetadata={(e) => {
+                      const v = e.currentTarget;
+                      // #region agent log
+                      fetch('http://127.0.0.1:7242/ingest/98543d2a-0de0-4c31-819d-abdaf7952873',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'debug-session',runId:'shorts-engagement-1',hypothesisId:'H4',location:'shorts-viewer.tsx:video_loadedmetadata',message:'video loadedmetadata',data:{mediaId:m.id,activeId,muted:v.muted,duration:isFinite(v.duration)?Math.round(v.duration):null},timestamp:Date.now()})}).catch(()=>{});
+                      // #endregion
+                    }}
                     className="h-[100vh] w-full object-contain"
                   />
                 </div>
