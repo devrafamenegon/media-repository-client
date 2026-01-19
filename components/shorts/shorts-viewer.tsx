@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
 import toast from "react-hot-toast";
-import { Volume2, VolumeX } from "lucide-react";
+import { Share2, Volume2, VolumeX } from "lucide-react";
+import Link from "next/link";
 
 import getMediaFeed from "@/actions/get-media-feed";
+import getMedia from "@/actions/get-media";
+import getParticipants from "@/actions/get-participants";
+import useParticipantStore from "@/hooks/use-participant-store";
 import { Media } from "@/types";
 import { useMediaEngagement } from "@/hooks/use-media-engagement";
 import { Button } from "@/components/ui/button";
@@ -16,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "@/compon
 
 type Props = {
   participantId?: string;
+  initialMediaId?: string;
 };
 
 function safeUUID() {
@@ -26,10 +31,12 @@ function safeUUID() {
   }
 }
 
-const ShortsViewer = ({ participantId }: Props) => {
+const ShortsViewer = ({ participantId, initialMediaId }: Props) => {
   const { userId } = useAuth();
+  const { participants, setParticipants } = useParticipantStore();
 
   const seedRef = useRef<string>(safeUUID());
+  const seenIdsRef = useRef<Set<string>>(new Set());
   const [items, setItems] = useState<Media[]>([]);
   const [nextCursor, setNextCursor] = useState<number | null>(0);
   const [loadingFeed, setLoadingFeed] = useState(true);
@@ -40,8 +47,39 @@ const ShortsViewer = ({ participantId }: Props) => {
   const activeMedia = useMemo(() => items.find((m) => m.id === activeId) ?? null, [items, activeId]);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const videoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+
+  // garante participants no store (para badge no overlay)
+  useEffect(() => {
+    if (participants.length) return;
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const ps = await getParticipants();
+        if (cancelled) return;
+        setParticipants(ps ?? []);
+      } catch (e) {
+        console.log("[ShortsViewer] - getParticipants error", e);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [participants.length, setParticipants]);
+
+  const participantsById = useMemo(() => {
+    const map: Record<string, (typeof participants)[number]> = {};
+    for (const p of participants) map[p.id] = p;
+    return map;
+  }, [participants]);
+
+  const activeParticipant = useMemo(() => {
+    if (!activeMedia) return undefined;
+    return participantsById[activeMedia.participantId];
+  }, [activeMedia, participantsById]);
 
   // engagement apenas do vídeo ativo
   const engagement = useMediaEngagement({
@@ -56,16 +94,38 @@ const ShortsViewer = ({ participantId }: Props) => {
     const run = async () => {
       try {
         setLoadingFeed(true);
+        // reinicia seed por sessão/participant para embaralhar e resetar dedupe
+        const seed = safeUUID();
+        seedRef.current = seed;
+        seenIdsRef.current = new Set();
+        setItems([]);
+        setNextCursor(0);
+        setActiveId(null);
+
+        let pinned: Media | null = null;
+        if (initialMediaId) {
+          try {
+            pinned = await getMedia(initialMediaId);
+          } catch (e) {
+            console.log("[ShortsViewer] - getMedia (initial) error", e);
+          }
+        }
+
         const res = await getMediaFeed({
-          seed: seedRef.current,
+          seed,
           cursor: 0,
           take: 10,
           participantId,
         });
         if (cancelled) return;
-        setItems(res.items ?? []);
+        const feed = res.items ?? [];
+        const merged = pinned
+          ? [pinned, ...feed.filter((m) => m.id !== pinned!.id)]
+          : feed;
+        seenIdsRef.current = new Set(merged.map((m) => m.id));
+        setItems(merged);
         setNextCursor(res.nextCursor);
-        setActiveId(res.items?.[0]?.id ?? null);
+        setActiveId(pinned?.id ?? merged?.[0]?.id ?? null);
       } catch (e) {
         console.log("[ShortsViewer] - initial feed error", e);
         toast.error("Something went wrong.");
@@ -77,7 +137,32 @@ const ShortsViewer = ({ participantId }: Props) => {
     return () => {
       cancelled = true;
     };
-  }, [participantId]);
+  }, [participantId, initialMediaId]);
+
+  const onShare = async () => {
+    if (!activeMedia?.id) return;
+
+    const url = `${window.location.origin}/shorts?mediaId=${activeMedia.id}`;
+    const title = activeMedia ? `#${activeMedia.numericId} - ${activeMedia.label}` : "Shorts";
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+        return;
+      }
+    } catch {
+      // se o user cancelar o share sheet, não precisa toast de erro
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copiado.");
+    } catch (e) {
+      console.log("[ShortsViewer] - clipboard error", e);
+      toast.error("Não foi possível copiar o link.");
+    }
+  };
 
   // observer do item ativo
   useEffect(() => {
@@ -128,41 +213,71 @@ const ShortsViewer = ({ participantId }: Props) => {
     }
   };
 
-  // prefetch
-  useEffect(() => {
-    if (!items.length) return;
-    if (nextCursor == null) return;
+  const loadMore = useCallback(async () => {
     if (loadingFeed || loadingMore) return;
+    if (!items.length) return;
 
-    const idx = items.findIndex((m) => m.id === activeId);
-    if (idx < 0) return;
+    try {
+      setLoadingMore(true);
 
-    if (idx >= items.length - 3) {
-      let cancelled = false;
-      const run = async () => {
-        try {
-          setLoadingMore(true);
-          const res = await getMediaFeed({
-            seed: seedRef.current,
-            cursor: nextCursor,
-            take: 10,
-            participantId,
-          });
-          if (cancelled) return;
-          setItems((prev) => [...prev, ...(res.items ?? [])]);
-          setNextCursor(res.nextCursor);
-        } catch (e) {
-          console.log("[ShortsViewer] - load more error", e);
-        } finally {
-          if (!cancelled) setLoadingMore(false);
-        }
-      };
-      run();
-      return () => {
-        cancelled = true;
-      };
+      // quando o cursor acabar, troca a seed e continua aleatório
+      const cursor = nextCursor ?? 0;
+      const seed = nextCursor == null ? safeUUID() : seedRef.current;
+      if (nextCursor == null) {
+        seedRef.current = seed;
+      }
+
+      const res = await getMediaFeed({
+        seed,
+        cursor,
+        take: 10,
+        participantId,
+      });
+
+      const incoming = res.items ?? [];
+      const seen = seenIdsRef.current;
+      const unique = incoming.filter((m) => !seen.has(m.id));
+      for (const m of unique) seen.add(m.id);
+
+      // fallback: se tudo vier repetido (ex.: participant com poucos vídeos), ainda assim append pra não travar o scroll
+      setItems((prev) => [...prev, ...(unique.length > 0 ? unique : incoming)]);
+      setNextCursor(res.nextCursor);
+    } catch (e) {
+      console.log("[ShortsViewer] - load more error", e);
+    } finally {
+      setLoadingMore(false);
     }
-  }, [activeId, items, nextCursor, loadingFeed, loadingMore, participantId]);
+  }, [items.length, loadingFeed, loadingMore, nextCursor, participantId]);
+
+  // Infinite scroll via sentinel (mais confiável que depender do activeId)
+  useEffect(() => {
+    const root = containerRef.current;
+    const sentinel = endRef.current;
+    if (!root || !sentinel) return;
+    if (loadingFeed) return;
+
+    let cancelled = false;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (cancelled) return;
+        const hit = entries.some((e) => e.isIntersecting);
+        if (!hit) return;
+        void loadMore();
+      },
+      {
+        root,
+        // pré-carrega antes de chegar no fim do último item
+        rootMargin: "300px 0px",
+        threshold: 0.01,
+      }
+    );
+
+    observer.observe(sentinel);
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+    };
+  }, [loadMore, loadingFeed]);
 
   // painel comments: desktop fixo / mobile dialog
   const [mobilePanelOpen, setMobilePanelOpen] = useState(false);
@@ -268,10 +383,23 @@ const ShortsViewer = ({ participantId }: Props) => {
   const EngagementPanel = (
     <div className="h-full flex flex-col">
       <div className="flex flex-col gap-4 p-4 border-l border-border h-full">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-1 md:mt-14">
           <div className="text-sm text-muted-foreground">Agora vendo</div>
-          <div className="font-medium line-clamp-2">
-            {activeMedia ? `#${activeMedia.numericId} - ${activeMedia.label}` : "-"}
+          <div className="flex flex-col gap-2 min-w-0">
+            {activeParticipant && (
+              <Link
+                href={`/medias?participantId=${activeParticipant.id}`}
+                className="inline-flex w-fit px-2 py-1 rounded-md"
+                style={{ backgroundColor: activeParticipant.bgColor }}
+              >
+                <span className="font-semibold text-md uppercase" style={{ color: activeParticipant.txtColor }}>
+                  {activeParticipant.name}
+                </span>
+              </Link>
+            )}
+            <div className="font-medium line-clamp-2">
+              {activeMedia ? `#${activeMedia.numericId} - ${activeMedia.label}` : "-"}
+            </div>
           </div>
         </div>
 
@@ -458,9 +586,12 @@ const ShortsViewer = ({ participantId }: Props) => {
   );
 
   return (
-    <div className="h-[100vh] w-full flex flex-row">
+    <div className="h-[100vh] w-full flex flex-row overflow-x-hidden">
       <div className="flex-1 relative bg-black">
-        <div ref={containerRef} className="h-[100vh] overflow-y-auto snap-y snap-mandatory no-scrollbar">
+        <div
+          ref={containerRef}
+          className="h-[100vh] w-full overflow-y-auto overflow-x-hidden snap-y snap-mandatory no-scrollbar"
+        >
           {loadingFeed ? (
             <div className="h-[100vh] flex items-center justify-center">
               <Skeleton className="h-[70vh] w-[min(420px,90vw)] rounded-3xl" />
@@ -473,9 +604,10 @@ const ShortsViewer = ({ participantId }: Props) => {
                 ref={(el) => {
                   itemRefs.current[m.id] = el;
                 }}
-                className="h-[100vh] snap-start flex items-center justify-center"
+                className="h-[100vh] snap-start flex items-center justify-center w-full min-w-0"
               >
-                <div className="h-[100vh] w-full flex items-center justify-center">
+                <div className="h-[100vh] w-full flex items-center justify-center min-w-0">
+                  <div className="relative h-[100vh] w-full min-w-0 overflow-hidden flex items-center justify-center">
                   <video
                     ref={(el) => {
                       videoRefs.current[m.id] = el;
@@ -492,12 +624,15 @@ const ShortsViewer = ({ participantId }: Props) => {
                       const v = e.currentTarget;
                       void v;
                     }}
-                    className="h-[100vh] w-full object-contain"
+                    className="h-[100vh] w-full max-w-full object-contain"
                   />
+                  </div>
                 </div>
               </div>
             ))
           )}
+          {/* sentinel para scroll infinito */}
+          {!loadingFeed && <div ref={endRef} className="h-px w-full" />}
           {loadingMore && (
             <div className="h-[30vh] flex items-center justify-center">
               <Skeleton className="h-10 w-40" />
@@ -506,10 +641,19 @@ const ShortsViewer = ({ participantId }: Props) => {
         </div>
 
         {/* Toggle de áudio: autoplay com som é bloqueado pelos browsers, então começamos mutado */}
-        <div className="fixed top-20 right-4 z-30">
+        <div className="fixed top-[70px] right-4 z-30 flex flex-row gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={onShare}
+            className="rounded-full gap-2"
+            disabled={!activeId}
+            title="Compartilhar"
+          >
+            <Share2 className="h-5 w-5" />
+          </Button>
           <Button type="button" variant="secondary" onClick={toggleMute} className="rounded-full gap-2">
             {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-            <span className="hidden md:inline">{isMuted ? "Sem som" : "Com som"}</span>
           </Button>
         </div>
 

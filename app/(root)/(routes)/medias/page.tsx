@@ -11,6 +11,7 @@ import useMediaStore from "@/hooks/use-media-store";
 import useParticipantStore from "@/hooks/use-participant-store";
 import { cn } from "@/lib/utils";
 import { Media, Participant } from "@/types";
+import { PlaySquare } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -102,13 +103,15 @@ const MediasPage = () => {
           </div>
 
           {participantId && (
-            <div className="self-end mb-7">
+            <div className="self-end mb-0 mr-4">
               <Button
                 type="button"
-                variant="secondary"
+                variant="outline"
                 onClick={() => router.push(`/shorts?participantId=${participantId}`)}
                 disabled={loading}
+                className="rounded-full gap-2 shrink-0"
               >
+                <PlaySquare className="h-5 w-5" />
                 Shorts
               </Button>
             </div>

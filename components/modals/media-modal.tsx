@@ -11,6 +11,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Skeleton } from "../ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../ui/dropdown-menu";
+import { Share2 } from "lucide-react";
 
 const MediaModal = () => {
   const mediaModal = useMediaModal();
@@ -168,6 +169,30 @@ const MediaModal = () => {
     return null;
   }
 
+  const onShare = async () => {
+    if (!mediaId) return;
+
+    const url = `${window.location.origin}/shorts?mediaId=${mediaId}`;
+    const title = `#${numericIdText} - ${labelText}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({ title, url });
+        return;
+      }
+    } catch {
+      // cancelado: não fazer nada
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch (e) {
+      console.log("[MediaModal] - clipboard error", e);
+      return;
+    }
+  };
+
   return (
     <Dialog open={mediaModal.isOpen} onOpenChange={onChange}>
       <DialogContent
@@ -179,12 +204,34 @@ const MediaModal = () => {
       >
         <DialogHeader>
           <DialogTitle className="flex gap-2 items-center">
-            {participant && (
-              <Link href={`/medias?participantId=${participant.id}`} onClick={() => onChange(false)} className="flex px-2 py-1 rounded-md" style={{ backgroundColor: participant.bgColor }}>
-                <span className="font-semibold text-md uppercase" style={{ color: participant.txtColor }}>{participant.name}</span>
-              </Link>
-            )}
-            #{numericIdText} - {labelText}
+            <div className="flex gap-2 items-center min-w-0">
+              {participant && (
+                <Link
+                  href={`/medias?participantId=${participant.id}`}
+                  onClick={() => onChange(false)}
+                  className="flex px-2 py-1 rounded-md shrink-0"
+                  style={{ backgroundColor: participant.bgColor }}
+                >
+                  <span className="font-semibold text-md uppercase" style={{ color: participant.txtColor }}>
+                    {participant.name}
+                  </span>
+                </Link>
+              )}
+              <span className="min-w-0 line-clamp-1">{`#${numericIdText} - ${labelText}`}</span>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onShare}
+              className="ml-[10px] gap-2 shrink-0"
+              title="Compartilhar"
+              disabled={loading}
+            >
+              <Share2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Compartilhar</span>
+            </Button>
           </DialogTitle>
           <DialogDescription>
             {id}
