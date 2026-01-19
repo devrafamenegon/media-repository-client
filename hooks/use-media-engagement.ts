@@ -10,6 +10,7 @@ import registerMediaView from "@/actions/register-media-view";
 import getMediaComments from "@/actions/get-media-comments";
 import createMediaComment from "@/actions/create-media-comment";
 import deleteMediaComment from "@/actions/delete-media-comment";
+import { exchangeAdminToken } from "@/actions/exchange-admin-token";
 import { MediaComment, ReactionType } from "@/types";
 
 type Params = {
@@ -64,7 +65,9 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
       pendingDesiredSelectedByTypeRef.current = {};
 
       try {
-        const token = await getToken();
+        const clerkToken = await getToken();
+        if (!clerkToken) throw new Error("Not authenticated");
+        const token = await exchangeAdminToken(clerkToken);
 
         const safe = async <T,>(name: string, fn: () => Promise<T>): Promise<T> => {
           try {
@@ -110,7 +113,9 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
     let reactSeq = 0;
 
     try {
-      const token = await getToken();
+      const clerkToken = await getToken();
+      if (!clerkToken) throw new Error("Not authenticated");
+      const token = await exchangeAdminToken(clerkToken);
       const currentMy = prev?.myReactionTypeIds ?? [];
       const alreadySelected = currentMy.includes(reactionTypeId);
       const desiredSelected = !alreadySelected;
@@ -202,7 +207,9 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
     if (!commentBody.trim()) return;
 
     try {
-      const token = await getToken();
+      const clerkToken = await getToken();
+      if (!clerkToken) throw new Error("Not authenticated");
+      const token = await exchangeAdminToken(clerkToken);
       const created = await createMediaComment(mediaId, commentBody.trim(), token);
       setComments((prev) => [created, ...prev]);
       setCommentBody("");
@@ -218,7 +225,9 @@ export const useMediaEngagement = ({ mediaId, userId, enabled = true }: Params) 
     if (!userId) return;
 
     try {
-      const token = await getToken();
+      const clerkToken = await getToken();
+      if (!clerkToken) throw new Error("Not authenticated");
+      const token = await exchangeAdminToken(clerkToken);
       await deleteMediaComment(mediaId, commentId, token);
       setComments((prev) => prev.filter((c) => c.id !== commentId));
     } catch (error) {
